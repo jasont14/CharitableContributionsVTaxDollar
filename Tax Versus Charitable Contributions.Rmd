@@ -1,0 +1,348 @@
+---
+title: "Tax Contributions Versus Charitable Contributions"
+author: "Jason Thatcher"
+date: "5/1/2020"
+output: 
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(knitr)
+library(formattable)
+library(ggplot2)
+library(tidyr)
+```
+
+## Summary
+
+Charitable Organizations support a critical need of their community.  They supplement and, in some cases, replace services that are not otherwise provided by local, state, or federal government agencies or organizations. These services, if performed by the government, would be funded by tax revenue. Whereas Charitable Organizations are funded thru private donations. This paper will analyze a ‘Charitable Dollar’ and a ‘Tax Dollar’ as a percent of total income of their donors. It seeks to answer the question if the use of charitable organizations results in everyone paying their fair share when compared to government funded services.
+
+## Introduction
+
+Citizens consume public services (‘services’) as they have a need during the normal course of their lives. Highways, courts, schools, and utilities such as water and electricity are examples of a few services that are provided directly, indirectly, funded or managed by the Federal Government of the United States(‘government’).  The services are shared resources available to all citizens and provide a collective benefit.
+
+The government services are funded, at least in part, by income taxes paid by its citizens. Income taxes are progressive in nature. Meaning that citizens are taxed at a progressively higher rate as their income increases. These rates are updated annually by the internal revenue service (‘IRS’).  The income tax rates for 2017 can be found in Table 1 below.
+
+
+```{r echo=FALSE}
+
+#Tax Bracket information for Single, Married Filing Jointly, Married Filing Separetly, Head of Household
+#Loading each separately and then combining into a Data.Frame
+TaxRate <- c(.1, .15, .25, .28, .33, .35, .396)
+Single <- c(0,9325,37950,91900,191650,416700,418400)
+MarriedFilingJoint <-c(0,18650,75900,153100,233350,416700,470700)
+MarriedFilingSeparate <- c(0,9325,37950,76550,116675,208350,235350)
+HeadOfHouseHold <- c(0,13350,50800,131200,212500,416700,444500)
+
+#Data.Frame for Tax Bracket Information (tbi)
+ tbi <- data.frame(TaxRate,Single,MarriedFilingJoint,MarriedFilingSeparate,HeadOfHouseHold)
+# 
+# #Format Rates
+
+tbi_t <- tbi %>%
+  mutate(TaxRate = percent((TaxRate))) %>%
+  mutate(Single = accounting((Single),format="d")) %>%
+  mutate(MarriedFilingJoint = accounting((MarriedFilingJoint), format="d")) %>%
+  mutate(MarriedFilingSeparate = accounting((MarriedFilingSeparate), format="d")) %>%
+  mutate(HeadOfHouseHold = accounting((HeadOfHouseHold), format="d"))
+
+tbi_tt <- tbi_t
+#column names
+TaxTitles <- c('Tax Rate',	'Single',	'Married Filing Joint', 'Married Filing Separately',	'Head of Household')
+colnames(tbi_t) <- TaxTitles
+
+kable(tbi_t, caption = "Table 1: 2017 Income Tax Break Points")
+
+tbi_t_tidy <- tbi_tt %>%
+  pivot_longer(names_to="Tax_Rate", values_to="Filing_Status",cols = -TaxRate)
+
+```
+
+## Literature Review
+
+According to Halseth & Ryser (2007) governments in both Canada and the United States (Brown 2017) have engaged local providers, including Charitable Organizations, to provide services that the governments themselves were unable or unwilling to provide to its citizens. These services provide the same public benefit as if they were provided and therefore funded by the government. However, unlike taxes, the funding for charitable organizations is made voluntarily by citizens at a rate that is both voluntary and discretionary.
+
+There was not direct literature comparing Tax Dollars to Charitable Dollars that was reasonably accessible. Whereas tax dollars and government services are easily quantifiable relative to funding, it was quickly discovered that Charitable organizations relative to funding is not as clear. Services and funding of services by donors is driven by a donor’s interest in the cause and their perception of the effectiveness of the Charitable Organization to effectively address a particular need according to Pelligra,  (2011). Not all Charitable Organizations have equal access to nor an equal ability to solicit donations. Furthermore, a charitable Dollar is not uniform across the Charitable Services space.
+
+In addition to the inequality of access to funds or capital to support a Charitable Organization the dollars necessary to operate a Charitable Organization differs widely between organizations.  According Rose-Ackerman some charities purchase and advertise ‘state of the are equipment’.  Some have large professional salaried staff. Others rely solely upon volunteers (1987).  With some charities likely to fall somewhere between these two extremes by having both paid staff but still utilizing volunteers.
+A charitable dollar when given is directed toward a public good. A dollar donated does not fully quantify the total ‘income’ of a charitable organization. In addition to monetary donations they receive free labor of volunteers, use of public or private facilities without charge, and other contributed goods and services. These are items that will be absent in a Charitable Dollar but be included in a Tax Dollar if spent to provide the same good or service by the government.
+
+To confuse the value of a Charitable Dollar even more, some charitable organizations, like those discussed in the articles by Halseth & Ryser (2007) and Brown (2017), receive Tax Dollars as a part of their funding.  As a result, either none, some, or all of the funding for a charitable organization could be by a tax dollar.  In this case the Charitable Dollar and the Tax dollar would by definition be equal and therefore result in everyone paying their ‘fair share’.
+
+The progressive income tax system is designed so that each citizen is expected to pay their ‘Fair Share’. If they have been blessed with good fortune to earn substantially more income, they are in turn taxed at a higher rate than those who earn far less. Consideration as to whether a progressive tax system is proper and/or achieves its desired effect is beyond the scope of this paper.  This paper recognizes that the progressive rates are deemed legal and therefore understands the idea of each paying their ‘fair share’ as just.
+
+Since charitable organizations are funded voluntarily by its citizens there are no guarantees or assurances that each citizen is paying their ‘fair share’ when compared to the progressive tax system.  In this paper we will review federal contributions in 2017 by citizens in the State of Kentucky.  We will review the percent of income contributed to taxes by total income and the percent contributed to charitable organizations by total income.  In addition, we will evaluate the amount contributed to determine if contributions are more progressive or less progressive as total income increases.
+
+## Theory
+
+This paper is exploring the relationship between a Charitable Dollar and a Tax Dollar relative to the idea of each citizen paying their ‘fair share’. This exploration includes:
+
+    1.	Evaluate the percent contribution by total income. Since citizens volunteer labor, goods, services, and facilities a ‘Charitable Dollar’ cannot be considered a 100% accounting of the charitable value.
+    2.	Evaluate the rate of contribution for Tax Dollars and Charitable Dollars.  The contributions can be normalized and compared by Total Income to measure rate of contribution.
+
+It is the presumption of the author that the rate of contribution for a Tax Dollar will be more than that of a ‘Charitable Dollar’.  Meaning it is expected that citizens are not paying their ‘fair share’ using the model of the progressive tax rate established by government tax policy when using Charitable Organizations.
+
+## Data
+
+Census data for the state of kentucky was retrieved from  https://www2.census.gov/programs-surveys/popest/datasets/2010-2017/counties/asrh/cc-est2017-alldata-21.csv. The data includes:
+
+
+
+```{r echo=FALSE}
+
+library(openxlsx)
+#KY Population Information Load.  Data is available from the United States Census bureau at https://www2.census.gov
+#Data Dictionary or description of data can be found at https://www2.census.gov/programs-surveys/popest/datasets/2010-2017/counties/asrh/cc-est2017-alldata.pdf
+
+#write url
+kypopurl <- "https://www2.census.gov/programs-surveys/popest/datasets/2010-2017/counties/asrh/cc-est2017-alldata-21.csv"
+
+#Load data using url to dataframe
+kypopdata <- read.table(kypopurl, header=TRUE, sep=",")
+
+#display first few rows of data
+head(kypopdata)
+
+
+```
+
+Tax information for the state of kentucy was retrieved from https://www.irs.gov/pub/irs-soi/17incyky.xlsx. The data of interest began at line 7 and includes:
+
+```{r}
+
+#GET IRS INCOME INFORMATION
+#URL of IRS website. Returns XLSX file
+kyirsurl <- "https://www.irs.gov/pub/irs-soi/17incyky.xlsx"
+
+#Reads XLSX file from URL to Data Frame
+kyirsdata <- read.xlsx(kyirsurl,sheet=1,startRow=7,colNames=FALSE)
+head(kyirsdata)
+```
+Population data had to be limited to those items of interest: State, County, Total Population, and Year.
+```{r}
+df <- select(kypopdata,STNAME, CTYNAME, TOT_POP, AGEGRP, YEAR)
+```
+
+We were interestedin year number 7 so the data was filtered for group 0 and year 7. The results included:
+
+```{r}
+#Filter for sum and year 7
+df <- df[df$AGEGRP==0 & df$YEAR==7,]
+head(df)
+
+```
+The column names were updated from abbreviations to human readable. Also insured county was of type character by casting.
+
+```{r}
+
+#Change Column Names for State, County, and Population
+names(df)[names(df)=="STNAME"] <- "STATE"
+names(df)[names(df)=="CTYNAME"] <- "COUNTY"
+names(df)[names(df)=="TOT_POP"] <- "POPULATION"
+
+#make sure COUNTY is character
+df$COUNTY = as.character(df$COUNTY)
+
+```
+
+Removed the word county. 
+
+```{r}
+
+#Remove word "County"
+df$COUNTY <-  substr(df$COUNTY,1,nchar(df$COUNTY)-7)
+
+```
+
+Did not need agegroup or year for analysis. Data now included:
+
+```{r}
+#Get rid of AGEGRP and YEAR
+df$AGEGRP <- NULL
+df$YEAR <- NULL
+head(df)
+
+
+```
+
+IRS information was a large set with broad set of columns.The data dictionary found at https://www2.census.gov/programs-surveys/popest/datasets/2010-2017/counties/asrh/cc-est2017-alldata.pdf was used to identify columns of interest
+
+```{r}
+
+#Move applicable columns to new dataframe with income, chartiable deductions, and income tax.
+di <- select(kyirsdata,1,2,20,21,88,89,94,95,138,139)
+
+```
+
+
+Meaningful column names were assigned to the dataframe.
+
+
+```{r}
+
+#Set column Names and update data frame
+ccnames <- c("CountyFIPSCode","CountyIncomeBracket","TotalIncomeReturns", "TotalIncome", "CharitableDeductionReturns","CharitableDeductions","TaxableIncomeReturns", "TaxableIncome", "TotalTaxLiabilityReturns", "TotalTaxLiability")
+colnames(di) <- ccnames
+
+```
+
+
+## Methodology
+
+Once the data was cleaned and prepared for analysis, we started work with contribution data. THe data was Loaded data into a new dataframe and a new column "Percent of Income" as added. The data now included:
+
+
+```{r}
+
+#Get First Data to use to report Charitable Deductions as a Percent of Total Income
+#Look at all of kentucky: Rows 7(totals) 9 - 15 OR 1, 3:9 FROM di
+di_cd <- di[c(3:9),]
+
+di_cd <- di_cd%>%select(CountyIncomeBracket,TotalIncome,CharitableDeductions)%>%mutate(PercentOfIncome=CharitableDeductions/TotalIncome * 100)
+
+head(di_cd)
+
+```
+
+
+The data was plotted in a barchart to illustrate the Contribution as a percent of income versus Total Income. The Total Income was a large text entry and the barplot was flipped to make the visualization more easily accessible.
+
+
+```{r}
+
+#Get the Percent of Income and Charitable Percent of Income in df &
+#plot the data strat by Income Bracket.  Transpose or flip axis to illustrate Contributions
+di_cd %>% 
+  arrange(PercentOfIncome) %>%
+    mutate(CountyIncomeBracket = factor(CountyIncomeBracket, levels = CountyIncomeBracket)) %>%
+    ggplot( aes(x=CountyIncomeBracket, y=PercentOfIncome)) +
+    geom_bar(stat="identity", fill="#fc8403", alpha=.4, width=.5) +
+    coord_flip() +
+    xlab("") +
+    theme_bw()%>% 
+      labs(title = "Charitable Contribution Analysis", x="Total Income", y = "Contribution as Percent of Total Income")
+
+```
+
+
+Once the contribution information was analyzed, the tax data was loaded into a dataframe and the column TaxPercentOfIncome was added to calculate the Tax as a percent of total income. The data included:
+
+
+```{r}
+#Plot Percent of Income by Strat
+di_tx <- di[3:9,]
+
+di_tx <- di_tx %>%select(CountyIncomeBracket,TotalTaxLiability,TotalIncome)%>%mutate(TaxPercentOfIncome = TotalTaxLiability/TotalIncome * 100)
+
+head(di_tx)
+```
+
+
+Like contribution data the tax was plotted in a barchart to illustrate the tax as a percent of income versus total income.  This was the comparison to used to see differences between Charitable and Tax Contributions.
+
+
+```{r}
+di_tx %>% 
+  arrange(TaxPercentOfIncome) %>%
+  mutate(CountyIncomeBracket = factor(CountyIncomeBracket, levels = CountyIncomeBracket)) %>%
+  ggplot( aes(x=CountyIncomeBracket, y=TaxPercentOfIncome)) +
+  geom_bar(stat="identity", fill="#fc8403", alpha=.4, width=.5) +
+  coord_flip() +
+  xlab("") +
+  theme_bw()%>% 
+  labs(title = "Tax Contribution Analysis", x="Total Income", y = "Tax as Percent of Total Income")
+
+```
+
+
+## Results
+
+The barcharts showed that tax and charitable contributions were both progressive and appeared to be of a similar progression. Furthermore the charts showed Tax and Charitable contributions as a percent of total income were not on a similar scale.  The tax 'contribution as percent of total income' was nearly 10 times as large as charitable . To compare the contributions a normalize function was created and the data was normalized {0..1}.
+
+
+```{r}
+
+##Normalize to 0..1 for both charitable as percent and tax as percent to compare
+##create a function to normalize data
+normalize <- function(x) {
+  return ((x - min(x))/ (max(x)-min(x)))
+}
+
+#Normalize tax percent
+di_tx$NormalizedPercent <- normalize(di_tx$TaxPercentOfIncome)
+head(di_tx)
+
+#Normalize charitable deduction percent
+di_cd$NormalizeCharitable <- normalize(di_cd$PercentOfIncome)
+head(di_cd)
+
+```
+
+
+Once normalized the values were loaded into a dataframe. Meaningful column names were assigned and the data included:
+
+
+```{r}
+
+#group normalized values to plot
+dr_cdtx <- data.frame(di_cd$CountyIncomeBracket,di_cd$NormalizeCharitable,di_tx$NormalizedPercent)
+cnames <- c("Bracket", "Charitable", "Tax")
+colnames(dr_cdtx)<-cnames
+
+head(dr_cdtx)
+
+```
+
+
+The data was tidy up to make plotting with ggplot easier and moved to dataframe dr_cdtx_tidy.
+
+
+```{r}
+
+#Tidy up data to make reporting with ggplot easier
+dr_cdtx
+dr_cdtx_tidy <- dr_cdtx %>% 
+  mutate(Bracket = factor(Bracket, levels = Bracket)) %>%
+  pivot_longer(names_to="Contribution", values_to="Normalized_Contribution",cols = -Bracket)
+head(dr_cdtx_tidy)
+```
+
+
+The data was plotted into a point plot to illustrate the differences in the normalized Charitable and normalized Tax rates
+
+```{r, dpi=600, fig.width=16, fig.height=6}
+
+ggplot(dr_cdtx_tidy, aes(x =Normalized_Contribution, y=Bracket, fill=Contribution)) +
+  geom_point(aes(shape = Contribution, color = Contribution), size=5) +
+  scale_shape_manual(values = c(24, 0)) +
+  scale_color_manual(values = c("#fc8403", "#FC4E07"))+
+  theme_bw()+
+  labs(title = "Normalized Contribution Analysis", x="Normalized Contribution as Percent of Income", y = "Total Income")
+
+
+
+
+```
+
+
+The plot of the normalized contribution as percent of total income clearly showed that charitable contributions were more progressive as total income increased. 
+
+## Conclusion
+
+The theory that citizens in the State of Kentucky were not paying their 'fair share' for charitable services was not true. Charitable contributions were in fact more progressive than tax contributions. However, it was also shown that there were approximately ten-times as many tax dollars available as charitable dollars as a percent of total income to fund services.
+
+# References
+
+Peffers, K., Tuunanen, T., Rothenberger, M. A., & Chatterjee, S. (2007). A design science research methodology for information systems research. Journal of management information systems, 24(3), 45-77.
+
+Rose-Ackerman, Susan, 1987. "Ideals versus Dollars: Donors, Charity Managers, and Government Grants," Journal of Political Economy, University of Chicago Press, vol. 95(4), pages 810-823, August.
+
+
+Kil, Hyeon Jong. (2012). The Geographical Distribution of Nonprofit Human Service Organizations and Neighborhood Characteristics. UCLA: Social Welfare 0864. Retrieved from: http://www.escholarship.org/uc/item/7728q445
+
+Halseth, G., & Ryser, L. (2007). The Deployment of Partnerships by the Voluntary Sector to Address Service Needs in Rural and Small Town Canada. Voluntas: International Journal of Voluntary and Nonprofit Organizations, 18(3), 241-265.
+
+Brown, M. (2012). Enhancing and Measuring Organizational Capacity: Assessing the Results of the U.S. Department of Justice Rural Pilot Program Evaluation. Public Administration Review, 72(4), 506-515.
